@@ -30,6 +30,7 @@ python compare_feko.py inputs/stack_2450_feko_slab.json feko_line.csv --gamma 0.
 | `check_course_media.py` | Compares the course media pack CSVs with the Cole-Cole model (result: within 0.0031 %) and writes Feko 3-column files from them |
 | `gabriel_media.py` | Gabriel εr(f), σ(f) lists for Feko (backup to the course media pack) |
 | `docs/feko_model_b_guide.md` | Step-by-step Model B and stack set-up with the reference numbers |
+| `parse_feko_out.py` | Feko `.out` file → medium check, tets/DOF, R and T, power loss per medium, energy balance, memory/time; writes the |E| line CSV and a model-log row |
 | `model_log.py` | Feko runs (log CSV + optional line exports) → convergence checks, script comparison, rows for the workbook's Model log |
 | `feko/model_b_log_template.csv` | Copy and fill one row per Feko solve |
 | `docs/prediction_sheet.md` | Individual prediction sheet (answers in `docs/prediction_answers.md`, open after comparing) |
@@ -69,7 +70,7 @@ Each layer takes either `tissue` (Gabriel model at `f_MHz`) or explicit `eps_r` 
 ## Status (Group 3, P1-C, 2.45 GHz)
 
 - Analytical script: done and validated (`python test_multilayer.py`, `pytest -q`, report in `docs/validation_report.pdf`).
-- Feko: CADFEKO v2022 project started (muscle frequency-list medium imported). No Feko results yet; the Feko vs script comparison, the mesh-convergence study and the model log are open.
+- Feko: Model A (muscle half-space) matches the script to ~0.3 %. Model B run B1 (60 mm muscle slab, PBC, FEM, 1.67 mm): |R| 0.7598 vs 0.7617 (-0.24 %), absorbed power 42.47 % vs 41.91 %. Mesh refinement (B2, B3), the T = 90 mm check and the skin/fat/muscle stack are open.
 - `docs/feko_model_b_guide.md` lists the steps and the reference numbers to compare against.
 
 ## Notes

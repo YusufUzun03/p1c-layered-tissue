@@ -1,0 +1,88 @@
+Altair Feko - Solver (par) Version 2022-14825 from 2022-03-31
+File:     ModelB
+
+          Volume of all tetrahedra in m*m*m:   6.00000E-06
+
+                         DATA FOR THE PERIODIC GREEN'S FUNCTION
+
+ Lattice vector u1 in m        A1X  =  1.00000E-02
+                               A1Y  =  0.00000E+00
+                               A1Z  =  0.00000E+00
+
+ Lattice vector u2 in m        A2X  =  0.00000E+00
+                               A2Y  =  1.00000E-02
+                               A2Z  =  0.00000E+00
+
+ Number of first order tetrahedra:           0
+ Number of second order tetrahedra:       9984
+
+ Number of degrees of freedom for FEM:                      59628 (second order elements)
+
+                                   DATA FOR DIELECTRIC MEDIA
+
+internal  relative     relative  conductivity   tan(delta)    tan(delta)    wavelength   mass density    volume     medium
+index  permittivity permeability   in S/m       (electric)    (magnetic)       in m       in kg/m^3      in m^3
+    0      1.00000      1.00000  0.00000E+00   0.00000E+00   0.00000E+00   1.22364E-01   1.00000E+03    infinite    Free space
+    1     52.72892      1.00000  1.73946E+00   2.42030E-01   0.00000E+00   1.67308E-02   1.09000E+03   6.00000E-06  Muscle_gabriel
+
+
+
+                    EXCITATION BY INCIDENT PLANE ELECTROMAGNETIC WAVE
+
+ Frequency in Hz:               FREQ =    2.45000E+09
+ Field strength in V/m:         |E0X| =  8.68000E+01   ARG(E0X) =   180.00
+   (Phase in degrees)           |E0Y| =  0.00000E+00   ARG(E0Y) =     0.00
+                                |E0Z| =  0.00000E+00   ARG(E0Z) =     0.00
+
+                    READING SOLUTION COEFFICIENTS FROM FILE
+
+                              POWER BUDGET IN THE DIELECTRIC (in Watt)
+
+              medium   power dens.   metallic      network       waveguide     source        source         power loss
+                       integral      losses        losses       backw. power   losses        power          in medium
+          Free space    unknown     0.00000E+00   0.00000E+00   0.00000E+00   0.00000E+00   0.00000E+00      unknown  
+      Muscle_gabriel  4.24668E-04   0.00000E+00   0.00000E+00   0.00000E+00   0.00000E+00   0.00000E+00    4.24668E-04
+
+                              SUMMARY OF LOSSES
+
+          Sum of all losses:                    4.2467E-04 W
+
+ Near field request with name: NearField1
+
+                              VALUES OF THE ELECTRIC FIELD STRENGTH in V/m
+
+                   LOCATION                               EX                   EY                   EZ  
+medium      X/m          Y/m          Z/m          magn.     phase      magn.     phase      magn.     phase
+    0   0.00000E+00  0.00000E+00  5.00000E-02   8.27925E+01  -78.59  4.78944E-04    6.01  0.00000E+00    0.00
+    0   0.00000E+00  0.00000E+00  3.02000E-02   1.52750E+02  -90.96  4.78944E-04   64.26  0.00000E+00    0.00
+    1   0.00000E+00  0.00000E+00  0.00000E+00   2.09726E+01 -174.33  3.75875E-02  158.92  6.89403E-03  -44.33
+    1   0.00000E+00  0.00000E+00 -1.00000E-02   1.34282E+01   -29.27  1.79412E-02  -53.18  4.78391E-02  137.41
+
+ Near field request with name: NearField1
+
+                              VALUES OF THE MAGNETIC FIELD STRENGTH in A/m
+
+                   LOCATION                               HX                   HY                   HZ  
+medium      X/m          Y/m          Z/m          magn.     phase      magn.     phase      magn.     phase
+    0   0.00000E+00  0.00000E+00  5.00000E-02   1.27132E-06 -173.99  3.45207E-01  174.20  0.00000E+00    0.00
+
+ Transmission/Reflection request with name: TRCoefficients1
+
+                              TRANSMISSION AND REFLECTION COEFFICIENTS
+
+                  LOCATION                      T_COPOL              T_CROSSPOL           R_COPOL              R_CROSSPOL
+       X/m          Y/m          Z/m          magn.     phase      magn.     phase      magn.     phase      magn.     phase
+   0.00000E+00  0.00000E+00  0.00000E+00   2.75828E-02  -31.26  2.52635E-06 -175.14  7.59806E-01  178.15  5.51779E-06  153.11
+
+ read from buffer:
+EN       0    0    0    0    0 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00
+
+                    SUMMARY OF REQUIRED TIMES IN SECONDS
+
+                                             CPU-time       runtime
+                         total times:           1.732         1.732
+
+ Peak memory usage during the whole solution: 1.322 MByte
+ (refers to the master process only)
+ Sum of the peak memory of all processes:     13.536 MByte
+ On average per process:                      990.024 kByte

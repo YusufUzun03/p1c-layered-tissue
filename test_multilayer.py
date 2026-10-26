@@ -171,3 +171,13 @@ def report():
 
 if __name__ == "__main__":
     report()
+
+
+def test_parse_feko_out_fixture():
+    from pathlib import Path
+    from parse_feko_out import parse, derived
+    d = parse((Path(__file__).parent / "tests" / "data" / "modelB_sample.out").read_text())
+    x = derived(d)
+    assert d["dof"] == 59628 and d["tets"] == 9984
+    assert abs(d["R"][0] - 0.759806) < 1e-9
+    assert abs(x["absorbed_fraction"] - 0.42469) < 1e-4
