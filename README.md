@@ -27,6 +27,7 @@ python compare_feko.py inputs/stack_2450_feko_slab.json feko_line.csv --gamma 0.
 | `compare_feko.py` | Overlays a POSTFEKO near-field export and runs the Week 5 checks |
 | `dipole_reference.py` | Free-space dipole Z_in(L/λ), resonance length (induced EMF): the Week 2 / Week 6 reference |
 | `compare_dipole.py` | Week 6: power balance, e_rad, per-layer shares and on-axis profile, dipole vs plane wave |
+| `check_course_media.py` | Compares the course media pack CSVs with the Cole-Cole model (result: within 0.0031 %) and writes Feko 3-column files from them |
 | `gabriel_media.py` | Gabriel εr(f), σ(f) lists for Feko (backup to the course media pack) |
 | `docs/feko_model_b_guide.md` | Step-by-step Model B and stack set-up with the reference numbers |
 | `model_log.py` | Feko runs (log CSV + optional line exports) → convergence checks, script comparison, rows for the workbook's Model log |
@@ -74,5 +75,5 @@ Each layer takes either `tissue` (Gabriel model at `f_MHz`) or explicit `eps_r` 
 ## Notes
 
 - The script, tools and documents were developed with the help of an AI assistant (Claude).
-- Course material (lecture slides, the course media pack, the workbook) is not included. The tissue properties are computed from the published Gabriel (1996) four-term Cole-Cole parameters; `media/` holds them as frequency lists for Feko (the course pack is the primary source).
+- Course material (lecture slides, the course media pack, the workbook) is not included. The tissue properties are computed from the published Gabriel (1996) four-term Cole-Cole parameters and agree with the course media pack files to 0.0031 % (`check_course_media.py`); `media/` holds them as frequency lists for Feko.
 - `docs/prediction_sheet*.md` and `docs/prediction_answers.md` are study copies for the individual prediction sheet.

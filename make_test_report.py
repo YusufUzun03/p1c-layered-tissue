@@ -24,6 +24,7 @@ from reportlab.platypus import Image, KeepTogether, Paragraph, SimpleDocTemplate
 
 from multilayer import fit_delta, make_layer, solve
 from test_multilayer import FREQS, SPEC_STACK, WEEK1_TABLE, run_fresnel, run_quarter_wave, stack
+from check_course_media import compare as compare_media
 from tissue import gabriel_props
 
 ROOT = Path(__file__).resolve().parent
@@ -68,8 +69,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(ROOT / "docs" / "validation_report.pdf"))
     ap.add_argument("--author", default="Yusuf Uzun")
+    ap.add_argument("--course-media", help="muscle=FILE,skin=FILE,fat=FILE (course media pack CSVs)")
     args = ap.parse_args()
 
+    media = None
+    if args.course_media:
+        media = compare_media(dict(kv.split("=", 1) for kv in args.course_media.split(",")))
     tests, summary, rc = run_pytest()
     all_pass = rc == 0 and tests and all(s == "PASSED" for _, s in tests)
 
@@ -128,6 +133,11 @@ def main():
              f"worst {100*worst_media:.2f} % ({worst_where})", ok(worst_media < 0.01)],
             ["Feko vs script", "|Γ|, per-layer absorption", "within 3 %", "not done yet (no Feko result)", "open"],
             ["Power balance (dipole case)", "P_acc = P_rad + P_abs", "error &lt; 5 %", "not done yet (Week 6)", "open"]]
+    if media:
+        dev = max(max(m["dev_eps"], m["dev_sigma"]) for m in media.values())
+        rows.insert(6, ["Tissue media vs course media pack", "Course files Muscle / Skin_dry / Fat_not_infiltrated "
+                        f"({min(m['n'] for m in media.values())} points each, 1 MHz to 20 GHz)", "within 1 %",
+                        f"worst {100*dev:.4f} % at the file's own frequencies", ok(dev < 0.01)])
     story += [table(rows, [36, 46, 22, 54, 17])]
 
     story += [P("2. Test 1: air/muscle interface vs Fresnel", H2),
@@ -179,9 +189,12 @@ def main():
     story += [P("7. Limitations and open items", H2),
               P("• All results come from the script; the Feko models (plane-wave PBC cell, mesh convergence) and the "
                 "model log are not done yet. Checkpoint 1 also needs those.<br/>"
-                "• The tissue properties are computed from the published Gabriel (1996) four-term Cole-Cole "
-                "parameters, not read from the course media pack. They agree with the Week 1 table to "
-                f"{100*worst_media:.2f} % and will be cross-checked against the course pack and the IT'IS database.<br/>"
+                "• The tissue properties are computed from the published Gabriel (1996) four-term Cole-Cole parameters. "
+                + (f"They agree with the course media pack files to {100*max(max(m['dev_eps'], m['dev_sigma']) for m in media.values()):.4f} % "
+                   "at the file frequencies, and with the Week 1 table to " + f"{100*worst_media:.2f} %.<br/>"
+                   if media else
+                   "They agree with the Week 1 table to " + f"{100*worst_media:.2f} % and still have to be cross-checked against the course media pack.<br/>")
+                +
                 "• The tests check the script against analytical references and the lecture numbers, so they cannot "
                 "reveal a convention mismatch with Feko; that is what the Feko vs script comparison is for.", BODY)]
 
