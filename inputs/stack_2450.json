@@ -1,0 +1,14 @@
+{
+  "team": "T3",
+  "case": "plane_wave",
+  "f_MHz": 2450,
+  "S_inc_Wpm2": 10,
+  "dz_mm": 0.2,
+  "air_mm": 50,
+  "halfspace_depth_mm": 60,
+  "layers": [
+    {"name": "skin",   "tissue": "skin",   "d_mm": 1.5},
+    {"name": "fat",    "tissue": "fat",    "d_mm": 8},
+    {"name": "muscle", "tissue": "muscle", "d_mm": null}
+  ]
+}

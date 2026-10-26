@@ -1,0 +1,13 @@
+{
+  "team": "T3",
+  "case": "model_a_muscle_halfspace",
+  "f_MHz": 403,
+  "S_inc_Wpm2": 0.0013272093646725391,
+  "layers": [
+    {
+      "name": "muscle",
+      "tissue": "muscle",
+      "d_mm": null
+    }
+  ]
+}

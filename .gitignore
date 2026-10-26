@@ -1,0 +1,5 @@
+slides/node_modules/
+slides/package-lock.json
+__pycache__/
+.pytest_cache/
+slides/apply_theme.js

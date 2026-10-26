@@ -1,0 +1,13 @@
+{
+  "team": "T3",
+  "case": "plane_wave_explicit",
+  "f_MHz": 2450,
+  "S_inc_Wpm2": 10,
+  "dz_mm": 0.2,
+  "air_mm": 50,
+  "layers": [
+    {"name": "skin",   "eps_r": 38.01, "sigma": 1.464, "d_mm": 1.5, "density": 1109},
+    {"name": "fat",    "eps_r": 5.28,  "sigma": 0.105, "d_mm": 8,   "density": 911},
+    {"name": "muscle", "eps_r": 52.73, "sigma": 1.739, "d_mm": null, "density": 1090}
+  ]
+}

@@ -1,0 +1,5 @@
+run,date,change,solver,mesh_mm,unknowns,mem_GB,time_min,gamma,line_file,notes
+B1,,baseline lambda_t/10,FEM,1.67,,,,,,muscle slab T = 60 mm; PBC 10 x 10 mm; plane wave 10 W/m2 (or 1 V/m)
+B2,,mesh lambda_t/15,FEM,1.11,,,,,,
+B3,,mesh lambda_t/20,FEM,0.83,,,,,,
+B4,,truncation T + 50 %,FEM,0.83,,,,,,muscle T = 90 mm; run model_log.py with --T-mm 90 for this row
