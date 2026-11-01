@@ -1,0 +1,2 @@
+run,date,change,solver,mesh_mm,unknowns,mem_GB,time_min,gamma,line_file,notes
+C1,2026-11-01,"skin/fat/muscle stack, mesh 0.5/1.0/1.11",Feko FEM (PBC),0.5/1.0/1.11,321869,1.923,0.559,0.522568,C1_line.csv,
