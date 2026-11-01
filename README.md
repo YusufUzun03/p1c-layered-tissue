@@ -70,7 +70,8 @@ Each layer takes either `tissue` (Gabriel model at `f_MHz`) or explicit `eps_r` 
 ## Status (Group 3, P1-C, 2.45 GHz)
 
 - Analytical script: done and validated (`python test_multilayer.py`, `pytest -q`, report in `docs/validation_report.pdf`).
-- Feko: Model A (muscle half-space) matches the script to ~0.3 %. Model B run B1 (60 mm muscle slab, PBC, FEM, 1.67 mm): |R| 0.7598 vs 0.7617 (-0.24 %), absorbed power 42.47 % vs 41.91 %. Mesh refinement (B2, B3), the T = 90 mm check and the skin/fat/muscle stack are open.
+- Feko plane-wave cases (periodic 10 x 10 mm cell, FEM) done and compared with the script, see section 7 of the report: 60 mm and 90 mm muscle slab (|R| within 0.24 % / 0.01 %), skin/fat/muscle stack (|R| +0.07 %, absorbed power within 0.2 %), mesh convergence below 0.1 %. Open: the 1.2-1.5 % absorbed-power offset in the 60 mm muscle slab (B2, B3), the dipole model (Week 6) and its power balance.
+- Raw `.out` files, near-field lines and the logs are in `feko/` (`parse_feko_out.py` reads a `.out` file).
 - `docs/feko_model_b_guide.md` lists the steps and the reference numbers to compare against.
 
 ## Notes
