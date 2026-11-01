@@ -1,0 +1,2 @@
+Run,Date,Change from previous run,Solver,Mesh (edge),Unknowns / tets,Peak memory (GB),Time (min),Key output,Value,Unit,Rel. change vs previous,Notes
+B4,2026-11-01,"T=90 mm, mesh 1.11 mm",Feko FEM (PBC),1.11 mm,310837,1.77,0.735,|Gamma|,0.76238,-,,

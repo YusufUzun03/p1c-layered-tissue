@@ -1,0 +1,2 @@
+run,date,change,solver,mesh_mm,unknowns,mem_GB,time_min,gamma,line_file,notes
+B4,2026-11-01,"T=90 mm, mesh 1.11 mm",Feko FEM (PBC),1.11,310837,1.77,0.735,0.762378,B4_line.csv,
