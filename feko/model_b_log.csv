@@ -1,0 +1,3 @@
+run,date,change,solver,mesh_mm,unknowns,mem_GB,time_min,gamma,line_file,notes
+B1,2026-10-26,baseline mesh 1.67 mm,Feko FEM (PBC),1.67,59628,,,0.759806,,time/memory not recorded (output of a re-run)
+B2,2026-11-01,mesh 1.11 mm,Feko FEM (PBC),1.11,205256,1.523,0.153,0.759819,B2_line.csv,

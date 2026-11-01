@@ -115,7 +115,8 @@ def parse(text):
             rows.append((int(p[0]), v[0], v[1], v[2], v[3], v[5], v[7]))
     d["near"] = rows  # (medium, x, y, z, |Ex|, |Ey|, |Ez|)
 
-    d["reused_solution"] = "READING SOLUTION COEFFICIENTS FROM FILE" in text
+    d["reused_solution"] = ("READING SOLUTION COEFFICIENTS FROM FILE" in text
+                            and "is not valid for the current solution" not in text)
     t = g(r"total times:\s+(" + FLOAT + r")\s+(" + FLOAT + ")")
     d["cpu_s"], d["run_s"] = (float(t.group(1)), float(t.group(2))) if t else (None, None)
     mem = g(r"Sum of the peak memory of all processes:\s*(" + FLOAT + r")\s*(\w+)")
