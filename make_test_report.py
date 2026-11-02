@@ -27,6 +27,8 @@ from test_multilayer import FREQS, SPEC_STACK, WEEK1_TABLE, run_fresnel, run_qua
 from check_course_media import compare as compare_media
 from tissue import ETA0, gabriel_props
 from parse_feko_out import derived as feko_derived, line_arrays, parse as parse_feko
+from sweep_table import blocks as sweep_blocks
+import csv as _csv
 
 ROOT = Path(__file__).resolve().parent
 FONT = Path(matplotlib.get_data_path()) / "fonts" / "ttf"
@@ -106,6 +108,39 @@ def feko_numbers():
     return out
 
 
+def dipole_numbers():
+    """Dipole runs (E1-E3, free-space sweep and radius check) or None when the outputs are missing."""
+    fdir = ROOT / "feko"
+    need = ["E1.out", "E2.out", "E3.out", "D2.out", "D3_a0p1.out", "D7_a0p02_L61.out"]
+    if not all((fdir / n).exists() for n in need) or not (ROOT / "results" / "dipole_over_slab_sweep.csv").exists():
+        return None
+    rd = lambda n: (fdir / n).read_text(errors="replace")
+    first = lambda n: next(sweep_blocks(rd(n)))
+    d = {k: first(f) for k, f in (("E1", "E1.out"), ("E3", "E3.out"), ("D2", "D2.out"), ("D3", "D3_a0p1.out"),
+                                  ("D7", "D7_a0p02_L61.out"))}
+    def prad(n):
+        m = re.search(r"0\.00 \.\. 180\.00 deg\.\s+0\.00 \.\. 360\.00 deg\.\s+(\S+) Watt", rd(n))
+        return float(m.group(1))
+    d["Prad_E2"], d["Prad_E3"] = prad("E2.out"), prad("E3.out")
+    for k in ("E1", "E3"):
+        d[k]["Pabs"] = d[k]["skin"] + d[k]["fat"] + d[k]["muscle"]
+    def load(p):
+        r = list(_csv.DictReader(open(ROOT / "results" / p)))
+        return {k: np.array([float(x[k]) for x in r]) for k in ("f_GHz", "R", "X", "S11_dB")}
+    sw = {"slab": load("dipole_over_slab_sweep.csv"), "free": load("dipole_free_sweep.csv")}
+    for k, v in sw.items():
+        f, X, R, S = v["f_GHz"], v["X"], v["R"], v["S11_dB"]
+        i = np.where(np.diff(np.sign(X)))[0][0]
+        v["f0"] = f[i] - X[i] * (f[i + 1] - f[i]) / (X[i + 1] - X[i])
+        v["R0"] = float(np.interp(v["f0"], f, R))
+        ff = np.linspace(f[0], f[-1], 4000)
+        ok_ = ff[np.interp(ff, f, S) <= -10]
+        v["band"] = (ok_.min(), ok_.max())
+        v["Smin"] = float(S.min())
+    d["sweep"] = sw
+    return d
+
+
 def feko_check_rows(fk):
     if not fk:
         return [["Feko vs script", "|Γ|, per-layer absorption", "within 3 %", "not done yet (no Feko result)", "open"]]
@@ -132,11 +167,33 @@ def feko_check_rows(fk):
                  f"worst {100*bal:.2f} %", ok_(bal < 0.05)])
     cB = abs(gam("B3") / gam("B2") - 1) if {"B2", "B3"} <= set(fk["runs"]) else None
     cC = abs(gam("C2") / gam("C1") - 1) if {"C1", "C2"} <= set(fk["runs"]) else None
+    dl = {}
+    for run, T in (("B2", 60), ("B3", 60), ("B4", 90)):
+        p_ = ROOT / "feko" / f"{run}_line.csv"
+        if p_.exists():
+            dd = list(_csv.reader(open(p_)))[1:]
+            zz = np.array([float(a[0]) for a in dd]); ee = np.array([float(a[1]) for a in dd])
+            mk = zz <= 0
+            d_an = 22.33e-3
+            dl[run] = fit_delta(zz[mk], ee[mk], 0.0, -T * 1e-3) / d_an - 1
+    if dl:
+        rows.append(["Feko δ in muscle slab (Week 1 window)", "analytic δ = 22.33 mm", "within 2 %",
+                     f"60 mm: {100*dl['B2']:+.1f} %, 90 mm: {100*dl['B4']:+.2f} %", ok_(max(abs(v) for v in dl.values()) < 0.02)])
     cv = [v for v in (cB, cC) if v is not None]
     if cv:
         rows.append(["Mesh convergence (Feko)", "last refinement vs previous: |Γ| (and absorbed power in section 7)",
                      "within 2 %", f"worst {100*max(cv):.3f} %", ok_(max(cv) < 0.02)])
     return rows
+
+
+def dipole_check_rows(dp):
+    if not dp:
+        return [["Power balance (dipole case)", "P_acc = P_rad + P_abs", "error &lt; 5 %", "not done yet (Week 6)", "open"]]
+    e = {k: abs(dp[k]["Pacc_W"] - dp["Prad_" + ("E2" if k == "E1" else "E3")] - dp[k]["Pabs"]) / dp[k]["Pacc_W"]
+         for k in ("E1", "E3")}
+    ok_ = max(e.values()) < 0.05
+    return [["Power balance (dipole case)", "P_acc = P_rad + P_abs (far-field integral)", "error &lt; 5 %",
+             f"{100*e['E1']:.2f} % (coarse mesh), {100*e['E3']:.2f} % (fine mesh)", "PASS" if ok_ else "FAIL"]]
 
 
 def gam_val(fk, k):
@@ -158,6 +215,7 @@ def main():
     if args.course_media:
         media = compare_media(dict(kv.split("=", 1) for kv in args.course_media.split(",")))
     fk = feko_numbers()
+    dp = dipole_numbers()
     tests, summary, rc = run_pytest()
     all_pass = rc == 0 and tests and all(s == "PASSED" for _, s in tests)
 
@@ -195,7 +253,7 @@ def main():
     story += [P("P1-C Group 3: analytical multilayer script, validation report", H1),
               P(f"EM wave penetration in layered tissue (2.45 GHz team). Prepared by {args.author}, "
                 f"{datetime.date.today().isoformat()}. Evidence for Checkpoint 1. "
-                + ("<b>Scope: the Python script, and the Feko results obtained so far (section 7) compared with it.</b>"
+                + ("<b>Scope: the Python script, the Feko plane-wave results (section 7) and the Feko dipole results (section 8).</b>"
                    if fk else "<b>Scope: the Python script only. No Feko result is included yet.</b>"), BODY),
               Spacer(1, 3)]
 
@@ -216,7 +274,7 @@ def main():
             ["Tissue media vs Week 1 table", "Week 1 slide 17 (ε′, σ at 4 frequencies)", "within 1 %",
              f"worst {100*worst_media:.2f} % ({worst_where})", ok(worst_media < 0.01)],
             *feko_check_rows(fk),
-            ["Power balance (dipole case)", "P_acc = P_rad + P_abs", "error &lt; 5 %", "not done yet (Week 6)", "open"]]
+            *dipole_check_rows(dp)]
     if media:
         dev = max(max(m["dev_eps"], m["dev_sigma"]) for m in media.values())
         rows.insert(6, ["Tissue media vs course media pack", "Course files Muscle / Skin_dry / Fat_not_infiltrated "
@@ -321,10 +379,12 @@ def main():
                     "the same 60 mm of muscle, agrees to 0.2 %. The cause of the 60 mm muscle-slab offset is not "
                     "identified yet; all criteria are still met (3 % and 5 %), but the offset has to be explained "
                     "before the 60 mm slab is used for anything finer than that.", BODY)]
-        story += [P("<b>Penetration depth.</b> On the stack (60 mm muscle), the fit that skips 1.5 δ at the back gives "
-                    "22.4 mm (+0.4 % from 22.33 mm). The Week 1 window (5 mm off each face) gives +2.1 % on the Feko "
-                    "field and +2.2 % on the exact script field, so that excess is the finite-slab bias of the "
-                    "window and not a Feko error (section 5).", BODY)]
+        story += [P("<b>Penetration depth.</b> With the Week 1 window (5 mm off each face) Feko gives δ = 22.73 mm "
+                    "(+1.8 %) in the muscle-only 60 mm slab at both mesh sizes and 22.27 mm (−0.25 %) in the 90 mm slab, "
+                    "so the 2 % criterion is met. For the muscle layer of the stack the same window gives +2.1 % on the "
+                    "Feko field and +2.2 % on the exact script field, so that excess is the finite-slab bias of the "
+                    "window and not a Feko error (section 5). Skipping 1.5 δ at the back gives +0.1 to +0.4 % in all three "
+                    "cases.", BODY)]
         for name, cap in (("feko/C2_line_vs_script.png",
                            "Figure 2. Stack, finest mesh: Feko |E| along the centre line against the script."),
                           ("feko/model_b_log_convergence.png",
@@ -338,11 +398,62 @@ def main():
     else:
         lim_no = "7"
 
+    if dp:
+        sw = dp["sweep"]
+        story += [P("8. Dipole 10 mm above the slab (Feko, FEM slab with MoM wire)", H2),
+                  P("A half-wave wire dipole (radius 0.1 mm, L = 58.3 mm = 0.476 λ0, tuned in free space to X = 0 at "
+                    "2.45 GHz) lies parallel to a 60 x 60 mm slab of skin 1.5 mm, fat 8 mm and muscle 56 mm, 10 mm above "
+                    "its surface; it is fed in the centre with 1 V (50 Ω reference). An electric symmetry plane at x = 0 "
+                    "and a magnetic one at y = 0 reduce the memory from 8.9 GB (the run without symmetry aborted) to "
+                    "6.0 GB (189 220 tetrahedra, 300 796 unknowns, 143 s per frequency). The radiated power is the "
+                    "far-field integral, independent of the loss integrals.", BODY), Spacer(1, 3)]
+        e1, e3 = dp["E1"], dp["E3"]
+        rows = [["Quantity", "Free space", "Above the slab"],
+                ["Resonance (X = 0)", f"{sw['free']['f0']:.4f} GHz", f"{sw['slab']['f0']:.4f} GHz"],
+                ["Resistance at resonance", f"{sw['free']['R0']:.1f} Ω", f"{sw['slab']['R0']:.1f} Ω"],
+                ["Best |S11| (50 Ω)", f"{sw['free']['Smin']:.1f} dB (sample)", f"{sw['slab']['Smin']:.1f} dB (sample)"],
+                ["−10 dB band", f"{sw['free']['band'][0]:.3f} to {sw['free']['band'][1]:.3f} GHz ({1000*(sw['free']['band'][1]-sw['free']['band'][0]):.0f} MHz)",
+                 f"{sw['slab']['band'][0]:.3f} to {sw['slab']['band'][1]:.3f} GHz ({1000*(sw['slab']['band'][1]-sw['slab']['band'][0]):.0f} MHz)"],
+                ["Z_in at 2.45 GHz", "71.6 − j0.6 Ω", f"{e3['R']:.2f} {e3['X']:+.2f}j Ω".replace("+", "+ j").replace("-", "− j") if False else f"{e3['R']:.1f} − j{abs(e3['X']):.1f} Ω"],
+                ["|S11| at 2.45 GHz", "−15.0 dB", f"{e3['S11_dB']:.1f} dB"],
+                ["Accepted power (1 V)", "6.98 mW", f"{1e3*e3['Pacc_W']:.2f} mW"],
+                ["Radiated power (far field)", "6.98 mW", f"{1e3*dp['Prad_E3']:.2f} mW"],
+                ["Absorbed power (skin / fat / muscle)", "0", f"{1e3*e3['skin']:.2f} / {1e3*e3['fat']:.2f} / {1e3*e3['muscle']:.2f} mW"],
+                ["Radiation efficiency", "100 %", f"{100*dp['Prad_E3']/e3['Pacc_W']:.1f} %"]]
+        story += [table(rows, [58, 52, 52]), Spacer(1, 4)]
+        bal = lambda k, pr: 100 * abs(dp[k]["Pacc_W"] - pr - dp[k]["Pabs"]) / dp[k]["Pacc_W"]
+        shares = [100 * e3[n] / e3["Pabs"] for n in ("skin", "fat", "muscle")]
+        story += [P(f"<b>Power balance.</b> P_acc = P_rad + P_abs holds within {bal('E1', dp['Prad_E2']):.2f} % (coarse mesh, 105 752 "
+                    f"tetrahedra) and {bal('E3', dp['Prad_E3']):.2f} % (fine mesh); the criterion is 5 %. <b>Mesh.</b> Refining from "
+                    f"105 752 to 189 220 tetrahedra changes Z_in by {100*(e3['R']/e1['R']-1):+.2f} % (R) and "
+                    f"{100*(e3['X']/e1['X']-1):+.2f} % (X) and the loss per layer by at most "
+                    f"{100*max(abs(e3[n]/e1[n]-1) for n in ('skin','fat','muscle')):.2f} %. <b>Layer split.</b> Of the absorbed power "
+                    f"{shares[0]:.1f} % is in skin, {shares[1]:.1f} % in fat and {shares[2]:.1f} % in muscle (plane wave: "
+                    f"43.6 / 7.6 / 48.8 %). <b>Detuning.</b> The slab moves the resonance by "
+                    f"{1000*(sw['slab']['f0']-sw['free']['f0']):+.1f} MHz ({100*(sw['slab']['f0']/sw['free']['f0']-1):+.2f} %) "
+                    f"and widens the −10 dB band from {1000*(sw['free']['band'][1]-sw['free']['band'][0]):.0f} to "
+                    f"{1000*(sw['slab']['band'][1]-sw['slab']['band'][0]):.0f} MHz (frequency sweep 2.30 to 2.60 GHz).", BODY)]
+        img = ROOT / "results" / "dipole_s11_detuning.png"
+        if img.exists():
+            from reportlab.lib.utils import ImageReader
+            w_, h_ = ImageReader(str(img)).getSize()
+            story += [Image(str(img), width=130 * mm, height=130 * mm * h_ / w_),
+                      P("Figure 4. |S11| and input reactance of the dipole in free space and above the slab.", SMALL)]
+        story += [P("<b>Free-space impedance and wire radius.</b> At exactly 0.5 λ0 (61.18 mm) the resistance depends on the "
+                    f"wire radius: {dp['D2']['R']:.1f}, {dp['D3']['R']:.1f} and {dp['D7']['R']:.1f} Ω for radius 0.5, 0.1 and 0.02 mm "
+                    f"(X = {dp['D2']['X']:.1f}, {dp['D3']['X']:.1f}, {dp['D7']['X']:.1f} Ω), against 73.1 + j42.5 Ω of the "
+                    "induced-EMF reference for an infinitely thin wire. Extrapolating the trend gives 75 to 77 Ω, so about "
+                    "5 % remains. At the tuned length the resistance is 72 Ω.", BODY)]
+    if dp:
+        lim_no = "9"
+
     story += [P(f"{lim_no}. Limitations and open items", H2),
-              P(("• Feko covers the plane-wave cases only (section 7); the dipole model, the S11 detuning and the dipole power "
-                 "balance are Week 6 and not done yet.<br/>• Feko runs use a single frequency (2.45 GHz) and normal "
-                 "incidence; the |E| line stops 55 mm below the surface, so the last 15 mm of the 69.5 mm stack are "
-                 "checked through |Γ| and the absorbed power only.<br/>"
+              P(("• Feko plane-wave cases are in section 7 and the dipole in section 8. The 60 mm muscle-only slab shows an absorbed-power "
+                 "offset of 1.2 to 1.5 % that is not explained (within the 3 % criterion).<br/>• Plane-wave runs use a single frequency "
+                 "(2.45 GHz) and normal incidence; the |E| line stops 55 mm below the surface, so the last 15 mm of the 69.5 mm stack "
+                 "are checked through |Γ| and the absorbed power only. The dipole was run at 2.30 to 2.60 GHz; 403, 915 and 5800 MHz "
+                 "are script-only.<br/>• The muscle thickness (60 mm, 56 mm for the dipole) follows the 2.5 δ rule of the specification "
+                 "instead of the 50 mm of the stack; in the script 50 mm changes |Γ| by 0.5 % and the layer powers by less than 1 %.<br/>"
                  if fk else
                  "• All results come from the script; the Feko models (plane-wave PBC cell, mesh convergence) and the "
                  "model log are not done yet. Checkpoint 1 also needs those.<br/>")
